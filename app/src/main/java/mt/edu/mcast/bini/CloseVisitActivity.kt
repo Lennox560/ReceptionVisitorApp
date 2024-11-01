@@ -9,12 +9,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -23,6 +28,7 @@ class CloseVisitActivity : AppCompatActivity() {
     private lateinit var inpCloseId: EditText
     private lateinit var buttonCloseVisit: Button
     private val fileName = "Visit_log_test.json"
+    val db = Firebase.firestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,11 +50,8 @@ class CloseVisitActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "Please enter an ID card", Toast.LENGTH_SHORT).show()
             }
-
-
-
-
         }
+
         var btnHomeClose = findViewById<Button>(R.id.btnHomeClose)
         btnHomeClose.setOnClickListener {
             finish()
@@ -56,39 +59,49 @@ class CloseVisitActivity : AppCompatActivity() {
     }
 
 
-        fun updateVisitCloseTime(idCard: String) {
-            val file = File(getExternalFilesDir(null), "Visit_log_test.txt")
-            val gson = Gson()
-            val type = object : TypeToken<MutableList<Visit>>() {}.type
-            val visitList: MutableList<Visit>
+    fun updateVisitCloseTime(idCard: String) {
+            try{
 
-            // Read the JSON file
-            visitList = if (file.exists()) {
-                FileReader(file).use { gson.fromJson(it, type) ?: mutableListOf() }
-            } else {
-                Toast.makeText(this, "Visit log file not found", Toast.LENGTH_SHORT).show()
-                return
-            }
+                val visitList: MutableList<Visit> = mutableListOf()
 
-            // Find the visit with the matching ID card
-            val visit = visitList.find { it.idCard == idCard }
-            if (visit != null && visit.timeLeft?.isEmpty() == true) {
-                // Update close time
-                val closeTime = System.currentTimeMillis()
-                val formattedDate = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    .withZone(ZoneId.systemDefault())
-                    .format(Instant.ofEpochMilli(closeTime))
-                visit.timeLeft = formattedDate
+                db.collection("Visitors")
+                    .get()
+                    .addOnSuccessListener { result ->
+                        for (document in result) {
+                            val visit = document.toObject(Visit::class.java)
+                            visitList.add(visit)
 
-                // Save the updated list back to the file
-                FileWriter(file).use { writer ->
-                    gson.toJson(visitList, writer)
-                }
-                Toast.makeText(this, "Close time updated for ID card: $idCard", Toast.LENGTH_SHORT).show()
-                finish()
-            } else {
-                Toast.makeText(this, "Visit not found for ID card: $idCard", Toast.LENGTH_SHORT).show()
-            }
+                            if(visit.idCard == idCard) {
+                                Toast.makeText(this, "ID card found", Toast.LENGTH_SHORT).show()
+                                val closeTime = System.currentTimeMillis()
+                                val formattedDate =
+                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                                        .withZone(ZoneId.systemDefault())
+                                        .format(Instant.ofEpochMilli(closeTime))
+                                visit.timeLeft = formattedDate
+
+                                db.collection("Visitors").document(document.id)
+                                    .update("timeLeft", visit.timeLeft)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(this, "Success in updating time", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(this, "Failure in updating time", Toast.LENGTH_SHORT).show()
+                                    }
+                                break
+                            }
+                        }
+
+                        Toast.makeText(this, "Success in reading list", Toast.LENGTH_SHORT).show()
+
+                    }
+
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
+
+
 }
+
 

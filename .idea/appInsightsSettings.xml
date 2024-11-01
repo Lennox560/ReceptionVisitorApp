@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="mt.edu.mcast.bini" />
+                  <option name="mobileSdkAppId" value="1:985039932380:android:797e5adc75be17c23a9d19" />
+                  <option name="projectId" value="reception-visitorlog" />
+                  <option name="projectNumber" value="985039932380" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

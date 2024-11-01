@@ -8,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
@@ -42,6 +44,8 @@ class OpenVisitActivity : AppCompatActivity() {
 
     private fun saveData(){
 
+        val db = Firebase.firestore
+
         val name = findViewById<EditText>(R.id.inpName).text.toString()
         val surname = findViewById<EditText>(R.id.inpSurname).text.toString()
         val idCard = findViewById<EditText>(R.id.inpIdCard).text.toString()
@@ -74,6 +78,15 @@ class OpenVisitActivity : AppCompatActivity() {
                 }
 
                 visitList.add(visit)
+                db.collection("Visitors")
+                    .add(visit)
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "Visit saved successfully to firebase", Toast.LENGTH_LONG).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(this, "Failed to save data to firebase", Toast.LENGTH_LONG).show()
+                    }
+
                 // Save the updated list back to the file
                 FileWriter(file).use { writer ->
                     gson.toJson(visitList, writer)
